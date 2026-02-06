@@ -13,13 +13,8 @@ app.get("/", (req, res) => {
   res.send("Nested Emotions backend running 🌙");
 });
 
-app.get("/health", async (req, res) => {
-  try {
-    await pool.query("SELECT 1");
-    res.json({ status: "ok", db: "connected" });
-  } catch (err) {
-    res.status(500).json({ status: "db error", error: err.message });
-  }
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
 });
 
 const PORT = process.env.PORT || 3000;
