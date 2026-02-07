@@ -9,6 +9,18 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+async function initDb() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS emotions (
+      id SERIAL PRIMARY KEY,
+      text TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+}
+
+initDb().catch(console.error);
+
 app.get("/", (req, res) => {
   res.send("Nested Emotions backend running 🌙");
 });
@@ -33,4 +45,27 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+app.post("/emotions", async (req, res) => {
+  const { text } = req.body;
+
+  if (!text) {
+    return res.status(400).json({ error: "text is required" });
+  }
+
+  const result = await pool.query(
+    "INSERT INTO emotions (text) VALUES ($1) RETURNING *",
+    [text]
+  );
+
+  res.json(result.rows[0]);
+});
+
+app.get("/emotions", async (req, res) => {
+  const result = await pool.query(
+    "SELECT * FROM emotions ORDER BY created_at DESC"
+  );
+
+  res.json(result.rows);
 });
