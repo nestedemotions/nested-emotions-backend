@@ -68,9 +68,15 @@ app.listen(PORT, "0.0.0.0", () => {
 app.post("/emotions", async (req, res) => {
   const { text } = req.body;
 
-  if (!text) {
-    return res.status(400).json({ error: "text is required" });
-  }
+  if (
+  typeof text !== "string" ||
+  text.trim().length === 0 ||
+  text.length > 100
+) {
+  return res.status(400).json({
+    error: "text must be a non-empty string under 100 characters"
+  });
+}
 
   const result = await pool.query(
     "INSERT INTO emotions (text) VALUES ($1) RETURNING *",
