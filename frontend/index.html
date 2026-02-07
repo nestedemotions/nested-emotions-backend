@@ -8,24 +8,60 @@
   <h1>Nested Emotions</h1>
 <p>If you can see this, the frontend is working.</p>
 
+<h2>Add Emotion</h2>
+<input id="emotion-input" type="text" placeholder="How are you feeling?" />
+<button id="add-emotion-btn">Add</button>
+
 <h2>Emotions</h2>
 <ul id="emotions-list"></ul>
 
-  <script>
+ <script>
   const list = document.getElementById("emotions-list");
+  const input = document.getElementById("emotion-input");
+  const button = document.getElementById("add-emotion-btn");
 
-  fetch("https://nested-emotions-backend.onrender.com/emotions")
-    .then(response => response.json())
-    .then(emotions => {
-      emotions.forEach(emotion => {
-        const li = document.createElement("li");
-        li.textContent = emotion.text;
-        list.appendChild(li);
+  function renderEmotion(text) {
+    const li = document.createElement("li");
+    li.textContent = text;
+    list.prepend(li);
+  }
+
+  function loadEmotions() {
+    fetch("https://nested-emotions-backend.onrender.com/emotions")
+      .then(response => response.json())
+      .then(emotions => {
+        list.innerHTML = "";
+        emotions.forEach(emotion => {
+          renderEmotion(emotion.text);
+        });
+      })
+      .catch(error => {
+        console.error("Error fetching emotions:", error);
       });
+  }
+
+  button.addEventListener("click", () => {
+    const text = input.value.trim();
+    if (!text) return;
+
+    fetch("https://nested-emotions-backend.onrender.com/emotions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ text })
     })
-    .catch(error => {
-      console.error("Error fetching emotions:", error);
-    });
+      .then(response => response.json())
+      .then(data => {
+        renderEmotion(data.text);
+        input.value = "";
+      })
+      .catch(error => {
+        console.error("Error adding emotion:", error);
+      });
+  });
+
+  loadEmotions();
 </script>
 </body>
 
