@@ -43,6 +43,16 @@ app.get("/health", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+
+  res.status(err.status || 500).json({
+    status: "error",
+    message: err.message || "Internal Server Error"
+  });
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
