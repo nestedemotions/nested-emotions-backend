@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nested Emotions</title>
+</head>
+<body>
+  <h1>Nested Emotions</h1>
+  <p>If you can see this, the frontend is working.</p>
+
+  <script>
+    fetch("https://nested-emotions-backend.onrender.com/emotions")
+      .then(response => response.json())
+      .then(data => {
+        console.log("Emotions from backend:", data);
+      })
+      .catch(error => {
+        console.error("Error fetching emotions:", error);
+      });
+  </script>
+</body>
+
