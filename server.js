@@ -22,7 +22,15 @@ async function initDb() {
 initDb().catch(console.error);
 
 app.get("/", (req, res) => {
-  res.send("Nested Emotions backend running 🌙");
+  res.json({
+    name: "Nested Emotions API",
+    status: "running",
+    endpoints: {
+      health: "GET /health",
+      getEmotions: "GET /emotions",
+      addEmotion: "POST /emotions"
+    }
+  });
 });
 
 app.get("/health", async (req, res) => {
