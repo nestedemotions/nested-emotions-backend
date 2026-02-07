@@ -21,6 +21,18 @@ async function initDb() {
 
 initDb().catch(console.error);
 
+function validateEmotionText(text) {
+  if (
+    typeof text !== "string" ||
+    text.trim().length === 0 ||
+    text.length > 100
+  ) {
+    return "text must be a non-empty string under 100 characters";
+  }
+
+  return null;
+}
+
 app.get("/", (req, res) => {
   res.json({
     name: "Nested Emotions API",
@@ -65,31 +77,34 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-app.post("/emotions", async (req, res) => {
-  const { text } = req.body;
+app.post("/emotions", async (req, res, next) => {
+  try {
+    const { text } = req.body;
 
-  if (
-  typeof text !== "string" ||
-  text.trim().length === 0 ||
-  text.length > 100
-) {
-  return res.status(400).json({
-    error: "text must be a non-empty string under 100 characters"
-  });
-}
+    const error = validateEmotionText(text);
+    if (error) {
+      return res.status(400).json({ error });
+    }
 
-  const result = await pool.query(
-    "INSERT INTO emotions (text) VALUES ($1) RETURNING *",
-    [text]
-  );
+    const result = await pool.query(
+      "INSERT INTO emotions (text) VALUES ($1) RETURNING *",
+      [text]
+    );
 
-  res.json(result.rows[0]);
+    res.json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
 });
 
-app.get("/emotions", async (req, res) => {
-  const result = await pool.query(
-    "SELECT * FROM emotions ORDER BY created_at DESC"
-  );
+app.get("/emotions", async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM emotions ORDER BY created_at DESC"
+    );
 
-  res.json(result.rows);
+    res.json(result.rows);
+  } catch (err) {
+    next(err);
+  }
 });
