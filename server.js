@@ -1,72 +1,62 @@
-require("dotenv").config()
-const express = require("express")
-const { Pool } = require("pg")
-const { v4: uuid } = require("uuid")
-const cors = require("cors")
+const express = require("express");
+const cors = require("cors");
+const { Pool } = require("pg");
+const createEmotionRoutes = require("./routes/emotions");
 
-const app = express()
-app.use(cors())
-app.use(express.json())
+const app = express();
+app.use(express.json());
+app.use(cors());
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
-})
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
-app.get("/", (_, res) => {
-  res.send("Nested Emotions backend live 🌿")
-})
+async function initDb() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS emotions (
+      id SERIAL PRIMARY KEY,
+      text TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+}
 
-// USERS TABLE
-pool.query(`
-CREATE TABLE IF NOT EXISTS users (
- id UUID PRIMARY KEY,
- first_name TEXT,
- last_name TEXT,
- gender TEXT,
- email TEXT UNIQUE,
- phone TEXT UNIQUE,
- nickname TEXT,
- room TEXT,
- created_at TIMESTAMP DEFAULT NOW()
-)
-`)
+initDb().catch(console.error);
 
-// OTP TABLE
-pool.query(`
-CREATE TABLE IF NOT EXISTS otps (
- id UUID PRIMARY KEY,
- contact TEXT,
- code TEXT,
- expires TIMESTAMP
-)
-`)
+app.use("/emotions", createEmotionRoutes(pool));
 
-// SIGNUP
-app.post("/signup", async (req, res) => {
-  const { firstName, lastName, gender, email, phone } = req.body
-  const id = uuid()
+app.get("/", (req, res) => {
+  res.json({
+    name: "Nested Emotions API",
+    status: "running",
+    endpoints: {
+      health: "GET /health",
+      getEmotions: "GET /emotions",
+      addEmotion: "POST /emotions"
+    }
+  });
+});
 
-  await pool.query(
-    `INSERT INTO users (id, first_name, last_name, gender, email, phone)
-     VALUES ($1,$2,$3,$4,$5,$6)`,
-    [id, firstName, lastName, gender, email, phone]
-  )
+app.get("/health", async (req, res) => {
+  try {
+    await pool.query("SELECT 1");
+    res.json({
+      status: "ok",
+      db: "connected"
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      db: "not connected"
+    });
+  }
+});
 
-  res.json({ success: true, userId: id })
-})
+const PORT = process.env.PORT || 3000;
 
-// ENTER ROOM
-app.post("/enter-room", async (req, res) => {
-  const { userId, nickname, room } = req.body
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
-  await pool.query(
-    `UPDATE users SET nickname=$1, room=$2 WHERE id=$3`,
-    [nickname, room, userId]
-  )
-
-  res.json({ entered: true })
-})
-
-app.listen(process.env.PORT || 3000, () => {
-  console.log("Nested Emotions backend running 🌙")
-})
